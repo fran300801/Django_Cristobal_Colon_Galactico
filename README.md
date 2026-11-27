@@ -21,11 +21,11 @@ Además, cada usuario tiene una serie de **características** (misiones largas, 
 - **Capitanes por nave:** Las naves pequeñas y medianas llevan un capitán y las grandes dos.
 - **Exoplanetas solo con éxito:** No se puede guardar un exoplaneta en una misión que no haya tenido éxito.
 - **Factoría de datos (RF2):** Comando que genera datos de prueba aleatorios con Faker respetando las restricciones anteriores.
+- **API REST (RF3):** CRUD completo de usuarios, consulta de tripulantes de una misión, creación de misiones validando capacidad/capitanes/disponibilidad, finalización de misiones con registro de exoplanetas y consulta de exoplanetas descubiertos por un capitán.
+- **Batería de pruebas:** 21 tests unitarios y de integración que validan los modelos, los endpoints de la API REST y las reglas de negocio.
 
 ### ⏳ Pendiente
 
-- **API REST (RF3):** CRUD de usuarios, asignar misión, finalizar misión, consultar tripulantes de una misión y consultar los planetas descubiertos por un capitán.
-- **Batería de pruebas:** Tests de modelos, endpoints y reglas de negocio.
 - **Despliegue.**
 
 ---
@@ -94,29 +94,175 @@ Exoplanetas: 8
 
 ## 🧩 Tabla de Endpoints
 
-⏳ La API REST todavía no está implementada. Aquí se documentará cada endpoint (método, ruta, descripción y body) con sus ejemplos de petición y respuesta JSON.
+Todos los endpoints cuelgan del prefijo `/api/`.
+
+| Método   | Ruta                                     | Descripción                                                         | Body JSON esperado                                                                                                                               | Respuesta principal      |
+| -------- | ---------------------------------------- | ------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------ |
+| `GET`    | `/api/usuarios/`                         | Lista todos los usuarios con sus características.                   | —                                                                                                                                                | `200 OK` (lista)         |
+| `GET`    | `/api/usuarios/<int:id>/`                | Obtiene el detalle de un usuario por su ID.                         | —                                                                                                                                                | `200 OK` / `404`         |
+| `POST`   | `/api/usuarios/crear/`                   | Crea un nuevo usuario y asigna sus características.                 | `{"apodo": "Nova", "habilidad_arma": 70, "habilidad_conduccion": 85, "capitan": true, "caracteristicas": ["Misiones largas"]}`                   | `201 Created`            |
+| `PUT`    | `/api/usuarios/<int:id>/actualizar/`     | Actualiza por completo los datos y características de un usuario.   | `{"apodo": "Nova", "habilidad_arma": 75, "habilidad_conduccion": 90, "capitan": true, "caracteristicas": ["Misiones largas", "Mantenimiento"]}` | `200 OK` / `404`         |
+| `DELETE` | `/api/usuarios/<int:id>/eliminar/`       | Elimina un usuario por su ID.                                       | —                                                                                                                                                | `204 No Content`         |
+| `GET`    | `/api/misiones/<int:id>/tripulantes/`    | Lista los tripulantes y capitanes de una misión (ordenados).        | —                                                                                                                                                | `200 OK` / `404`         |
+| `POST`   | `/api/misiones/crear/`                   | Crea una misión `En curso` validando capacidad, capitanes y libres. | `{"nombre": "Odisea I", "nave_id": 1, "participantes": [1, 2, 3, 4]}`                                                                             | `201 Created` / `400`    |
+| `POST`   | `/api/misiones/<int:id>/finalizar/`      | Finaliza una misión (`Exitosa` o `Fallida`) y registra exoplanetas. | `{"resultado": "Exitosa", "exoplanetas": [{"nombre": "Kepler-X", "descripcion": "Habitable"}]}`                                                 | `200 OK` / `400`         |
+| `GET`    | `/api/capitanes/<int:id>/exoplanetas/`   | Lista los exoplanetas descubiertos en misiones de un capitán.       | —                                                                                                                                                | `200 OK` / `400` / `404` |
+
+### Ejemplos de petición y respuesta JSON
+
+#### Crear usuario (`POST /api/usuarios/crear/`)
+
+Petición:
+```json
+{
+  "apodo": "EstrellaFugaz",
+  "habilidad_arma": 60,
+  "habilidad_conduccion": 80,
+  "capitan": false,
+  "caracteristicas": ["Cocinero", "Mantenimiento"]
+}
+```
+Respuesta (`201 Created`):
+```json
+{
+  "mensaje": "Usuario creado correctamente",
+  "id": 71
+}
+```
+
+#### Consultar tripulantes de una misión (`GET /api/misiones/1/tripulantes/`)
+
+Respuesta (`200 OK`):
+```json
+{
+  "mision": "Exploración Orión",
+  "estado": "En curso",
+  "nave": "Halcón Galáctico",
+  "tripulacion": [
+    {
+      "id": 1,
+      "apodo": "CapitanVega",
+      "funcion": "capitán"
+    },
+    {
+      "id": 2,
+      "apodo": "Tripulante02",
+      "funcion": "tripulante"
+    }
+  ]
+}
+```
+
+#### Crear misión (`POST /api/misiones/crear/`)
+
+Petición:
+```json
+{
+  "nombre": "Rumbo Andrómeda",
+  "nave_id": 1,
+  "participantes": [1, 2, 3, 4]
+}
+```
+Respuesta (`201 Created`):
+```json
+{
+  "mensaje": "Misión creada correctamente",
+  "id": 11
+}
+```
+
+#### Finalizar misión (`POST /api/misiones/11/finalizar/`)
+
+Petición:
+```json
+{
+  "resultado": "Exitosa",
+  "exoplanetas": [
+    {
+      "nombre": "Aethelgard-4",
+      "descripcion": "Mundo oceánico con atmósfera estable"
+    }
+  ]
+}
+```
+Respuesta (`200 OK`):
+```json
+{
+  "mensaje": "Misión finalizada correctamente",
+  "id": 11,
+  "estado": "Exitosa",
+  "fecha_fin": "2026-11-27",
+  "exoplanetas": [
+    {
+      "id": 9,
+      "nombre": "Aethelgard-4"
+    }
+  ]
+}
+```
+
+#### Exoplanetas de un capitán (`GET /api/capitanes/1/exoplanetas/`)
+
+Respuesta (`200 OK`):
+```json
+{
+  "capitan": "CapitanVega",
+  "exoplanetas": [
+    {
+      "id": 9,
+      "nombre": "Aethelgard-4",
+      "descripcion": "Mundo oceánico con atmósfera estable",
+      "fecha_descubrimiento": "2026-11-27",
+      "mision": "Rumbo Andrómeda"
+    }
+  ]
+}
+```
 
 ---
 
 ## 🧪 Pruebas
 
-⏳ La batería de pruebas todavía no está implementada. Se ejecutará con:
+La batería de pruebas está implementada en `cristobalcolon/tests.py` con **21 tests** organizados en 4 clases:
+
+| Clase de Test         | Qué comprueba                                                                                                                 |
+| --------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `ModelosTest`         | Capacidad válida según tamaño de nave, capitanes requeridos, asignación de características y restricción de exoplanetas.     |
+| `UsuariosAPITest`     | Operaciones CRUD completas sobre los endpoints de usuarios (`listar`, `detalle`, `crear`, `actualizar` y `eliminar`).         |
+| `MisionesAPITest`     | Creación válida de misiones, validaciones (sin nave, tripulación incompleta, sin capitán, usuarios ocupados) y finalización. |
+| `ExoplanetasAPITest`  | Consulta de exoplanetas descubiertos por un capitán y errores cuando el usuario no es capitán o no existe.                    |
+
+Para ejecutar toda la batería de pruebas:
 
 ```bash
 python manage.py test
+```
+
+Ejemplo de salida:
+
+```bash
+Found 21 test(s).
+Creating test database for alias 'default'...
+System check identified no issues (0 silenced).
+.....................
+----------------------------------------------------------------------
+Ran 21 tests in 0.245s
+
+OK
+Destroying test database for alias 'default'...
 ```
 
 ---
 
 ## 👥 Trabajo realizado
 
-| Integrante           | Trabajo                                                    |
-| -------------------- | ---------------------------------------------------------- |
-| Francisco José Sobrino      | Estructura del proyecto y modelos `Usuario`, `Nave` y `Mision`. |
-| Alberto García Moreno  | Modelos `Exoplaneta` y `Caracteristica`. |
-| Alberto García Moreno |    Factoría y comando de datos de prueba (RF2).               |
-| Francisco José Sobrino       |    Desarrollo De Api REST         |
-| Francisco José Sobrino       |    Batería de tests         |
+| Integrante             | Trabajo                                                       |
+| ---------------------- | ------------------------------------------------------------- |
+| Francisco José Sobrino | Estructura del proyecto y modelos `Usuario`, `Nave` y `Mision`. |
+| Alberto García Moreno  | Modelos `Exoplaneta` y `Caracteristica`.                    |
+| Alberto García Moreno  | Factoría y comando de datos de prueba (RF2).                  |
+| Francisco José Sobrino | Desarrollo de API REST (RF3).                                 |
+| Francisco José Sobrino | Batería de tests.                                             |
 
 ---
 
@@ -162,5 +308,3 @@ python manage.py runserver
 
 - Este proyecto se distribuye bajo la licencia MIT.
 - Eres libre de usarlo y modificarlo, siempre que se mantenga la atribución original.
-
----

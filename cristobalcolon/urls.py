@@ -12,5 +12,4 @@ urlpatterns = [
     path("misiones/<int:id>/finalizar/", views.finalizar_mision, name="finalizar_mision"),
     path("capitanes/<int:id>/exoplanetas/", views.listar_exoplanetas_capitan, name="exoplanetas_capitan"),
 
-
 ]
