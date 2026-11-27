@@ -112,10 +112,11 @@ python manage.py test
 
 | Integrante           | Trabajo                                                    |
 | -------------------- | ---------------------------------------------------------- |
-| Francisco José       | Estructura del proyecto y modelos `Usuario`, `Nave` y `Mision`. |
+| Francisco José Sobrino      | Estructura del proyecto y modelos `Usuario`, `Nave` y `Mision`. |
 | Alberto García Moreno  | Modelos `Exoplaneta` y `Caracteristica`. |
 | Alberto García Moreno |    Factoría y comando de datos de prueba (RF2).               |
-|  Francisco José Sobrino       |    Desarrollo De Api REST         |
+| Francisco José Sobrino       |    Desarrollo De Api REST         |
+| Francisco José Sobrino       |    Batería de tests         |
 
 ---
 
